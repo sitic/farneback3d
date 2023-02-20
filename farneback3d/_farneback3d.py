@@ -12,6 +12,7 @@ import pycuda.autoinit
 from pycuda.compiler import SourceModule
 import os
 import json
+from tqdm import tqdm, trange
 
 import farneback3d._utils
 from farneback3d._utils import divup
@@ -36,7 +37,8 @@ class Farneback:
                  use_gpu=True,
                  upscale_on_termination=True,
                  fast_gpu_scaling=True,
-                 vesselmask_gpu=None
+                 vesselmask_gpu=None,
+                 show_progress=False
                  ):
         self.pyr_scale = pyr_scale
         self.levels = levels
@@ -55,6 +57,7 @@ class Farneback:
         self._vesselmask_gpu = vesselmask_gpu
         self._resize_kernel_size_factor = 4
         self._max_resize_kernel_size = 9
+        self.show_progress = show_progress
 
         with open(os.path.join(os.path.dirname(__file__), 'farneback_kernels.cu')) as f:
             read_data = f.read()
@@ -124,8 +127,7 @@ class Farneback:
         imgs = [gpuarray.to_gpu(next_vol), gpuarray.to_gpu(cur_vol)]
         flow_gpu = None
 
-        for k in range(self.levels, -1, -1):
-            print('Scale %i' % k)
+        for k in trange(self.levels, -1, -1, disable=not self.show_progress, desc='level'):
 
             if k == self.quit_at_level:
                 if k != -1 and self.upscale_on_termination and prev_flow_gpu is not None:
@@ -185,8 +187,7 @@ class Farneback:
 
             # dsareco.visualization.imshow(M,"M")
 
-            for i in range(self.num_iterations):
-                print('iteration %i' % i)
+            for i in trange(self.num_iterations, disable=not self.show_progress, leave=False, desc='iterations'):
                 if self.use_gaussian_kernel:
                     self._FarnebackUpdateFlow_GaussianBlur_gpu(
                         R[0], R[1], flow_gpu, M, self.winsize, i < self.num_iterations - 1)
