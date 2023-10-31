@@ -50,7 +50,7 @@ def resize_gpu(src_vol, dst_vol=None, dst_shape=None, scaling=None):
 
     if dst_shape is None:
         assert scaling
-        dst_shape = [np.int(np.round(i * scaling)) for i in src_vol.shape]
+        dst_shape = [int(np.round(i * scaling)) for i in src_vol.shape]
 
     if dst_vol is None:
         dst_vol = gpuarray.GPUArray(dst_shape, np.float32)
